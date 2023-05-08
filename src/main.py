@@ -1,5 +1,5 @@
 import sys
-from PyQt5.QtWidgets import QMainWindow, QApplication, QCalendarWidget, QLabel, QTimeEdit
+from PyQt5.QtWidgets import QMainWindow, QApplication, QCalendarWidget, QTimeEdit
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
@@ -12,6 +12,7 @@ month_text = {'ene.' : '01', 'feb.' : '02', 'mar.' : '03',
 
 class MainWindow(QMainWindow):
     def __init__(self):
+
         QMainWindow.__init__(self)
 
         # Carga el archivo .ui
@@ -19,25 +20,36 @@ class MainWindow(QMainWindow):
 
         # search elements in file .ui
         self.calendar = self.findChild(QCalendarWidget, 'widget_calendar')
-        self.dateText = self.findChild(QLabel, 'label_text_date')
+        self.hour = self.findChild(QTimeEdit, 'timeEdit')
 
+        # connection function when change selection calendar Widget
         self.calendar.selectionChanged.connect(self.change_date)
+        self.hour.editingFinished.connect(self.change_time)
+
+        self.dateSelected = self.calendar.selectedDate().toString().split(' ')
+        self.timeSelected = self.hour.time().toString()
+
 
     def change_date(self):
 
-        dateSelected = self.calendar.selectedDate().toString().split(' ')
+        self.dateSelected = self.calendar.selectedDate().toString().split(' ')
 
-        day = dateSelected[2]
-        month = month_text[dateSelected[1]]
-        age = dateSelected[3]
+        day = self.dateSelected[2]
+        month = month_text[self.dateSelected[1]]
+        age = self.dateSelected[3]
 
         if int(day) < 10:
             day = '0' + day
 
-        date_actual = day + '/' + month + '/' + age
-       
-        self.dateText.setText(date_actual)
+        self.dateSelected = day + '/' + month + '/' + age
+        print(self.dateSelected, self.timeSelected)
 
+
+    def change_time(self):
+
+        self.timeSelected = self.hour.time().toString()
+        print(self.dateSelected, self.timeSelected)
+        
 
 app = QApplication(sys.argv)
 
