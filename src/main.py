@@ -1,9 +1,9 @@
 import sys
-from PyQt5.QtWidgets import QMainWindow, QApplication, QCalendarWidget, QTimeEdit
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
 from PyQt5 import uic
+from PyQt5.QtWidgets import QMainWindow, QApplication, QCalendarWidget, QTimeEdit, QLineEdit, QTextEdit, QPushButton, QMessageBox
+from docxtpl import DocxTemplate, InlineImage
+from docx.shared import Mm
+import sqlite3
 
 month_text = {'ene.' : '01', 'feb.' : '02', 'mar.' : '03', 
               'abr.' : '04', 'may.' : '05', 'jun.' : '06',
@@ -19,11 +19,17 @@ class MainWindow(QMainWindow):
 
         # search elements in file .ui
         self.calendar = self.findChild(QCalendarWidget, 'widget_calendar')
-        self.hour = self.findChild(QTimeEdit, 'timeEdit')
+        self.hour = self.findChild(QTimeEdit, 'time_hour')
+        self.client_doc = self.findChild(QLineEdit, 'client_doc')
+        self.comment_doc = self.findChild(QTextEdit, 'comment_doc')
+        self.button_adjunt = self.findChild(QPushButton, 'button_adjunt')
+
+        self.dialog = QMessageBox(self)
 
         # connection function when change selection calendar Widget
         self.calendar.selectionChanged.connect(self.change_date)
         self.hour.editingFinished.connect(self.change_time)
+        self.button_adjunt.clicked.connect(self.get_data_documentation)
 
         self.dateSelected = self.dateModified(self.calendar.selectedDate().toString().split(' '))
         self.timeSelected = self.hour.time().toString()
@@ -44,13 +50,41 @@ class MainWindow(QMainWindow):
 
     def change_date(self):
         self.dateSelected = self.dateModified(self.calendar.selectedDate().toString().split(' '))
-        print(self.dateSelected, self.timeSelected)
 
 
     def change_time(self):
         self.timeSelected = self.hour.time().toString()
-        print(self.dateSelected, self.timeSelected)
+
+
+    def message_dialog(self, message):
+        self.dialog.setWindowTitle('Advertencia')
+        self.dialog.setText(message)
+        self.dialog.exec()
+
+
+    def get_data_documentation(self):
+        text_client_doc = self.client_doc.text()
+        text_comment_doc = self.comment_doc.toPlainText()
         
+        if text_client_doc != '' and  text_comment_doc != '' and self.timeSelected != '00:00:00':
+            try: 
+                miConexion = sqlite3.connect('client')
+                miCursor = miConexion.cursor()
+                miCursor.execute('SELECT * FROM client WHERE id_client={}'.format(text_client_doc))
+                Query = miCursor.fetchone()
+            except:
+                self.message_dialog('Error Conexión Base Datos')
+            miConexion.close()
+            print(Query)
+
+            if(Query == None):
+                self.message_dialog('No existe el cliente')
+
+
+            print(self.dateSelected, self.timeSelected, text_client_doc, text_comment_doc)
+        else:
+            self.message_dialog('Información Incompleta')
+
 
 app = QApplication(sys.argv)
 
