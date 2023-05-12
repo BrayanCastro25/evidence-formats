@@ -70,7 +70,7 @@ class MainWindow(QMainWindow):
 
     def consult_db(self, id):
         try: 
-            miConexion = sqlite3.connect('./client', timeout = 10)
+            miConexion = sqlite3.connect('./client', timeout = 5)
             miCursor = miConexion.cursor()
             miCursor.execute('SELECT * FROM client WHERE id_client={}'.format(id))
             Query = miCursor.fetchone()
@@ -94,7 +94,7 @@ class MainWindow(QMainWindow):
         if text_client != "" and text_phone != "" and text_name != "" and text_address != "" and text_city != "":
             print("All")
             
-            miConexion = sqlite3.connect('./client', timeout = 10)
+            miConexion = sqlite3.connect('./client', timeout = 5)
             miCursor = miConexion.cursor()
             print("1")
             SQL = 'INSERT INTO client (id_client, phone, name, address, city) VALUES ({}, {}, "{}", "{}", "{}")'.format(int(text_client), int(text_phone), text_name, text_address, text_city)
