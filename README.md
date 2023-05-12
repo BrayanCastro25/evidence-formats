@@ -42,3 +42,8 @@ Para la empresa es indispensable la siguiente información: identificador del cl
 
 ![Base de datos clientes](./img/table_database.png)
 
+
+
+## Inconvenientes
+
+* Se presento error al insertar un registro en la base de datos, se evidenció que se presentaba ya que al momento de insertar se tenia la base de datos abierta.
