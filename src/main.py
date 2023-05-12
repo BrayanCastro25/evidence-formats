@@ -4,7 +4,6 @@ from PyQt5.QtWidgets import QMainWindow, QApplication, QCalendarWidget, QTimeEdi
 from docxtpl import DocxTemplate, InlineImage
 from docx.shared import Mm
 import sqlite3
-import csv
 
 list_clients = []
 
@@ -20,7 +19,7 @@ class MainWindow(QMainWindow):
         # Carga el archivo .ui
         uic.loadUi('mainwindow.ui', self)
 
-        # search elements in file .ui
+        # search elements of Documentation in file .ui
         self.calendar = self.findChild(QCalendarWidget, 'widget_calendar')
         self.hour = self.findChild(QTimeEdit, 'time_hour')
         self.client_doc = self.findChild(QLineEdit, 'client_doc')
@@ -28,14 +27,29 @@ class MainWindow(QMainWindow):
         self.comment_doc = self.findChild(QTextEdit, 'comment_doc')
         self.button_add = self.findChild(QPushButton, 'button_add')
         self.button_create_documents = self.findChild(QPushButton, 'button_create_docs')
-
-        self.dialog = QMessageBox(self)
-
-        # connection function when change selection calendar Widget
+        
+        # connection function for elements Documentation
         self.calendar.selectionChanged.connect(self.change_date)
         self.hour.editingFinished.connect(self.change_time)
         self.button_add.clicked.connect(self.get_data_documentation)
         self.button_create_documents.clicked.connect(self.create_documentation)
+
+        # search elements of Edit in file .ui
+        self.search_edit = self.findChild(QLineEdit, 'text_edit_search')
+        self.button_search = self.findChild(QPushButton, 'button_search')
+        self.button_create = self.findChild(QPushButton, 'button_create')
+        self.client_edit = self.findChild(QLineEdit, 'text_edit_client')
+        self.phone_edit = self.findChild(QLineEdit, 'text_edit_phone')
+        self.name_edit = self.findChild(QLineEdit, 'text_edit_name')
+        self.address_edit = self.findChild(QLineEdit, 'text_edit_address')
+        self.city_edit = self.findChild(QLineEdit, 'text_edit_city')
+
+        # connection function for elements Edit
+        self.button_search.clicked.connect(self.search_id)
+        self.button_create.clicked.connect(self.create_client)
+
+        # element to warn the user
+        self.dialog = QMessageBox(self)
 
         self.dateSelected = self.dateModified(self.calendar.selectedDate().toString().split(' '))
         self.timeSelected = self.hour.time().toString()
@@ -53,6 +67,54 @@ class MainWindow(QMainWindow):
 
         return dateActual
 
+
+    def consult_db(self, id):
+        try: 
+            miConexion = sqlite3.connect('./client', timeout = 10)
+            miCursor = miConexion.cursor()
+            miCursor.execute('SELECT * FROM client WHERE id_client={}'.format(id))
+            Query = miCursor.fetchone()
+            miConexion.close()
+            if(Query == None):
+                self.message_dialog('No existe el cliente')
+            else:
+                return Query
+            
+        except:
+            self.message_dialog('Error Conexión Base Datos')
+
+
+    def insert_db(self):
+        text_client = self.client_edit.text()
+        text_phone = self.phone_edit.text()
+        text_name = self.name_edit.text()
+        text_address = self.address_edit.text()
+        text_city = self.city_edit.text()
+
+        if text_client != "" and text_phone != "" and text_name != "" and text_address != "" and text_city != "":
+            print("All")
+            
+            miConexion = sqlite3.connect('./client', timeout = 10)
+            miCursor = miConexion.cursor()
+            print("1")
+            SQL = 'INSERT INTO client (id_client, phone, name, address, city) VALUES ({}, {}, "{}", "{}", "{}")'.format(int(text_client), int(text_phone), text_name, text_address, text_city)
+            print(SQL)
+            miCursor.execute(SQL)
+            print("2")
+            miConexion.commit() 
+            print("3")
+            miCursor.close() 
+            print("4")
+            miConexion.close()  
+            # except:
+            #     self.message_dialog('Error Conexión Base Datos')
+            #     print("Con")
+
+        else:
+            self.message_dialog('Error Información Incompleta')
+            print("Inf")
+
+        
 
     def change_date(self):
         self.dateSelected = self.dateModified(self.calendar.selectedDate().toString().split(' '))
@@ -74,23 +136,15 @@ class MainWindow(QMainWindow):
         text_comment_doc = self.comment_doc.toPlainText()
         
         if text_client_doc != '' and  text_comment_doc != '' and self.timeSelected != '00:00:00':
-            try: 
-                miConexion = sqlite3.connect('client')
-                miCursor = miConexion.cursor()
-                miCursor.execute('SELECT * FROM client WHERE id_client={}'.format(text_client_doc))
-                Query = miCursor.fetchone()
-                miConexion.close()
-            except:
-                self.message_dialog('Error Conexión Base Datos')
+            Query = self.consult_db(text_client_doc)
 
-            if(Query == None):
-                self.message_dialog('No existe el cliente')
-            else:
-                list_clients.append([Query[0], Query[1], Query[2], Query[3], Query[4], self.timeSelected + ' ' + self.dateSelected, text_employee_doc, text_comment_doc])
+            if(Query != None):
+                list_clients.append([Query[0], Query[1], Query[2], Query[3], Query[4], self.dateSelected + ' ' + self.timeSelected, text_employee_doc, text_comment_doc])
                 print(list_clients)
 
         else:
             self.message_dialog('Información Incompleta')
+
 
     def create_documentation(self):
         for item in list_clients:
@@ -106,7 +160,23 @@ class MainWindow(QMainWindow):
                         'imagen_evidencia': InlineImage(doc, "./capture/" + str(item[0]) + ".png", width = Mm(150))
                         }
             doc.render(context)
-            doc.save("Evidencia ID " + str(item[0]) + " " + str(self.dateSelected).replace('/', '_') + ".docx")
+            doc.save("./evidence/Evidencia ID " + str(item[0]) + " " + str(self.dateSelected).replace('/', '_') + ".docx")
+
+
+    def search_id(self):
+        id = self.search_edit.text()
+        if id != None:
+            Query = self.consult_db(id)
+            self.client_edit.setText(str(Query[0]))
+            self.phone_edit.setText(str(Query[1]))
+            self.name_edit.setText(str(Query[2]))
+            self.address_edit.setText(str(Query[3]))
+            self.city_edit.setText(str(Query[4]))
+
+
+    def create_client(self):
+        self.insert_db()
+
 
 app = QApplication(sys.argv)
 
