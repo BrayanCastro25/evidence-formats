@@ -38,6 +38,7 @@ class MainWindow(QMainWindow):
         self.search_edit = self.findChild(QLineEdit, 'text_edit_search')
         self.button_search = self.findChild(QPushButton, 'button_search')
         self.button_create = self.findChild(QPushButton, 'button_create')
+        self.button_update = self.findChild(QPushButton, 'button_update')
         self.client_edit = self.findChild(QLineEdit, 'text_edit_client')
         self.phone_edit = self.findChild(QLineEdit, 'text_edit_phone')
         self.name_edit = self.findChild(QLineEdit, 'text_edit_name')
@@ -47,6 +48,7 @@ class MainWindow(QMainWindow):
         # connection function for elements Edit
         self.button_search.clicked.connect(self.search_id)
         self.button_create.clicked.connect(self.create_client)
+        self.button_update.clicked.connect(self.update_client)
 
         # element to warn the user
         self.dialog = QMessageBox(self)
@@ -68,6 +70,15 @@ class MainWindow(QMainWindow):
         return dateActual
 
 
+    def delete_info_edit(self):
+        self.client_edit.setText("")
+        self.phone_edit.setText("")
+        self.name_edit.setText("")
+        self.address_edit.setText("")
+        self.city_edit.setText("")
+
+
+
     def consult_db(self, id):
         try: 
             miConexion = sqlite3.connect('./client', timeout = 5)
@@ -75,6 +86,8 @@ class MainWindow(QMainWindow):
             miCursor.execute('SELECT * FROM client WHERE id_client={}'.format(id))
             Query = miCursor.fetchone()
             miConexion.close()
+            self.delete_info_edit()
+            self.message_dialog('Cliente Consultado Satisfactorimente')
             if(Query == None):
                 self.message_dialog('No existe el cliente')
             else:
@@ -82,9 +95,10 @@ class MainWindow(QMainWindow):
             
         except:
             self.message_dialog('Error Conexión Base Datos')
+        
 
+    def insert_db(self):        
 
-    def insert_db(self):
         text_client = self.client_edit.text()
         text_phone = self.phone_edit.text()
         text_name = self.name_edit.text()
@@ -92,23 +106,17 @@ class MainWindow(QMainWindow):
         text_city = self.city_edit.text()
 
         if text_client != "" and text_phone != "" and text_name != "" and text_address != "" and text_city != "":
-            print("All")
             
-            miConexion = sqlite3.connect('./client', timeout = 5)
-            miCursor = miConexion.cursor()
-            print("1")
-            SQL = 'INSERT INTO client (id_client, phone, name, address, city) VALUES ({}, {}, "{}", "{}", "{}")'.format(int(text_client), int(text_phone), text_name, text_address, text_city)
-            print(SQL)
-            miCursor.execute(SQL)
-            print("2")
-            miConexion.commit() 
-            print("3")
-            miCursor.close() 
-            print("4")
-            miConexion.close()  
-            # except:
-            #     self.message_dialog('Error Conexión Base Datos')
-            #     print("Con")
+            try:
+                miConexion = sqlite3.connect('./client', timeout = 5)
+                miCursor = miConexion.cursor()
+                SQL = 'INSERT INTO client (id_client, phone, name, address, city) VALUES ({}, {}, "{}", "{}", "{}")'.format(int(text_client), int(text_phone), text_name, text_address, text_city)
+                miCursor.execute(SQL)
+                miConexion.commit() 
+                miCursor.close()  
+                self.message_dialog('Cliente Creado Satisfactorimente')
+            except:
+                self.message_dialog('Error Conexión Base Datos')
 
         else:
             self.message_dialog('Error Información Incompleta')
@@ -173,9 +181,29 @@ class MainWindow(QMainWindow):
             self.address_edit.setText(str(Query[3]))
             self.city_edit.setText(str(Query[4]))
 
-
+            
     def create_client(self):
         self.insert_db()
+
+
+    def update_client(self):
+        text_client = self.client_edit.text()
+        text_phone = self.phone_edit.text()
+        text_name = self.name_edit.text()
+        text_address = self.address_edit.text()
+        text_city = self.city_edit.text()
+
+        try:
+            miConexion = sqlite3.connect('./client', timeout = 5)
+            miCursor = miConexion.cursor()
+            SQL = 'UPDATE client SET phone = {}, name = "{}", address = "{}", city = "{}" WHERE id_client = {};'.format(int(text_phone), text_name, text_address, text_city, int(text_client))
+            miCursor.execute(SQL)
+            miConexion.commit() 
+            miCursor.close()  
+            self.message_dialog('Cliente Actualizado Satisfactorimente')
+        except:
+            self.message_dialog('Error Conexión Base Datos')
+
 
 
 app = QApplication(sys.argv)
