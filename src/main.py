@@ -39,6 +39,7 @@ class MainWindow(QMainWindow):
         self.button_search = self.findChild(QPushButton, 'button_search')
         self.button_create = self.findChild(QPushButton, 'button_create')
         self.button_update = self.findChild(QPushButton, 'button_update')
+        self.button_delete = self.findChild(QPushButton, 'button_delete')
         self.client_edit = self.findChild(QLineEdit, 'text_edit_client')
         self.phone_edit = self.findChild(QLineEdit, 'text_edit_phone')
         self.name_edit = self.findChild(QLineEdit, 'text_edit_name')
@@ -49,6 +50,7 @@ class MainWindow(QMainWindow):
         self.button_search.clicked.connect(self.search_id)
         self.button_create.clicked.connect(self.create_client)
         self.button_update.clicked.connect(self.update_client)
+        self.button_delete.clicked.connect(self.delete_client)
 
         # element to warn the user
         self.dialog = QMessageBox(self)
@@ -87,10 +89,10 @@ class MainWindow(QMainWindow):
             Query = miCursor.fetchone()
             miConexion.close()
             self.delete_info_edit()
-            self.message_dialog('Cliente Consultado Satisfactorimente')
             if(Query == None):
                 self.message_dialog('No existe el cliente')
             else:
+                self.message_dialog('Cliente Consultado Satisfactorimente')
                 return Query
             
         except:
@@ -108,12 +110,8 @@ class MainWindow(QMainWindow):
         if text_client != "" and text_phone != "" and text_name != "" and text_address != "" and text_city != "":
             
             try:
-                miConexion = sqlite3.connect('./client', timeout = 5)
-                miCursor = miConexion.cursor()
                 SQL = 'INSERT INTO client (id_client, phone, name, address, city) VALUES ({}, {}, "{}", "{}", "{}")'.format(int(text_client), int(text_phone), text_name, text_address, text_city)
-                miCursor.execute(SQL)
-                miConexion.commit() 
-                miCursor.close()  
+                self.conection_db(SQL)
                 self.message_dialog('Cliente Creado Satisfactorimente')
             except:
                 self.message_dialog('Error Conexión Base Datos')
@@ -186,6 +184,13 @@ class MainWindow(QMainWindow):
         self.insert_db()
 
 
+    def conection_db(self, sql):
+        miConexion = sqlite3.connect('./client', timeout = 5)
+        miCursor = miConexion.cursor()
+        miCursor.execute(sql)
+        miConexion.commit() 
+        miCursor.close()  
+
     def update_client(self):
         text_client = self.client_edit.text()
         text_phone = self.phone_edit.text()
@@ -194,13 +199,19 @@ class MainWindow(QMainWindow):
         text_city = self.city_edit.text()
 
         try:
-            miConexion = sqlite3.connect('./client', timeout = 5)
-            miCursor = miConexion.cursor()
             SQL = 'UPDATE client SET phone = {}, name = "{}", address = "{}", city = "{}" WHERE id_client = {};'.format(int(text_phone), text_name, text_address, text_city, int(text_client))
-            miCursor.execute(SQL)
-            miConexion.commit() 
-            miCursor.close()  
+            self.conection_db(SQL) 
             self.message_dialog('Cliente Actualizado Satisfactorimente')
+        except:
+            self.message_dialog('Error Conexión Base Datos')
+
+
+    def delete_client(self):
+        text_client = self.client_edit.text()
+        try:
+            SQL = 'DELETE FROM client WHERE id_client={}'.format(int(text_client))
+            self.conection_db(SQL) 
+            self.message_dialog('Cliente Eliminado Satisfactorimente')
         except:
             self.message_dialog('Error Conexión Base Datos')
 
